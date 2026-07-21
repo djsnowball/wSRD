@@ -1,5 +1,12 @@
 const char * confFile = "/config.json";
-const uint16_t F1_UDP_PORT = 20777;
+
+// Multi-game UDP ports
+const uint16_t F1_UDP_PORT = 20777;      // F1 2022/2023/2024
+const uint16_t ACC_UDP_PORT = 9996;      // Assetto Corsa Competizione
+
+// Game detection
+GameType currentGameType = GAME_UNKNOWN;
+GameDetection gameDetection;
 
 const char * const GEAR_NAMES[16] = {
   "N",  // Neutral
