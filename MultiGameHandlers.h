@@ -34,6 +34,12 @@ void ProcessGamePacket(const uint8_t* buffer, uint16_t packetSize) {
       case GAME_ACC:
         gameStr = "ACC";
         break;
+      case GAME_PROJECT_CARS:
+        gameStr = "Project Cars";
+        break;
+      case GAME_PROJECT_CARS_2:
+        gameStr = "Project Cars 2";
+        break;
       default:
         gameStr = "Unknown";
     }
@@ -56,6 +62,12 @@ void ProcessGamePacket(const uint8_t* buffer, uint16_t packetSize) {
       break;
     case GAME_ACC:
       ProcessACCPacket(buffer, packetSize);
+      break;
+    case GAME_PROJECT_CARS:
+      ProcessProjectCarsPacket(buffer, packetSize);
+      break;
+    case GAME_PROJECT_CARS_2:
+      ProcessProjectCars2Packet(buffer, packetSize);
       break;
     default:
       break;
@@ -247,6 +259,97 @@ void HandleACCPhysics(ACCPhysicsPacket *physics) {
   DEBUG_SERIAL.println(speedKmh);
   
   myNex.writeNum("main.speed.val", (uint16_t)speedKmh);
+}
+
+// Project Cars packet processor
+void ProcessProjectCarsPacket(const uint8_t* buffer, uint16_t packetSize) {
+  if (packetSize < sizeof(ProjectCarsPacket)) return;
+  
+  const ProjectCarsPacket* pc = (const ProjectCarsPacket*)buffer;
+  
+  // Extract basic telemetry
+  uint16_t speedKmh = pc->m_speed * 3.6f;
+  uint16_t rpm = pc->m_engineRate;
+  
+  currentLap = pc->m_lapNumber;
+  
+  // Update display
+  myNex.writeNum("main.pos.val", pc->m_racePosition);
+  myNex.writeNum("main.lap.val", pc->m_lapNumber);
+  myNex.writeNum("speed.val", speedKmh);
+  myNex.writeNum("rpm.val", rpm);
+  
+  // Update throttle/brake
+  myNex.writeNum("main.throttle.val", pc->m_throttle * 100);
+  myNex.writeNum("main.brake.val", pc->m_brakes * 100);
+  
+  // Tire temps
+  if (currentPage == 1 || currentPage == 6 || currentPage == 7 || currentPage == 12) {
+    myNex.writeStr("temprl.txt", String((uint8_t)pc->m_tyreTempRearLeft) + "\xB0C");
+    myNex.writeStr("temprr.txt", String((uint8_t)pc->m_tyreTempRearRight) + "\xB0C");
+    myNex.writeStr("tempfl.txt", String((uint8_t)pc->m_tyreTempFrontLeft) + "\xB0C");
+    myNex.writeStr("tempfr.txt", String((uint8_t)pc->m_tyreTempFrontRight) + "\xB0C");
+  }
+  
+  // LED rev counter
+  LedRevCounter(rpm);
+  
+  // Track top speed
+  if (speedKmh > yourTopSpeed) {
+    yourTopSpeed = speedKmh;
+    myNex.writeStr("rv.ts.txt", String(yourTopSpeed));
+  }
+}
+
+// Project Cars 2 packet processor (enhanced)
+void ProcessProjectCars2Packet(const uint8_t* buffer, uint16_t packetSize) {
+  if (packetSize < sizeof(ProjectCars2Packet)) return;
+  
+  const ProjectCars2Packet* pc2 = (const ProjectCars2Packet*)buffer;
+  
+  // Extract telemetry
+  uint16_t speedKmh = pc2->m_speed * 3.6f;
+  uint16_t rpm = pc2->m_engineRate;
+  
+  currentLap = pc2->m_lapNumber;
+  
+  // Update display
+  myNex.writeNum("main.pos.val", pc2->m_racePosition);
+  myNex.writeNum("main.lap.val", pc2->m_lapNumber);
+  myNex.writeNum("speed.val", speedKmh);
+  myNex.writeNum("rpm.val", rpm);
+  
+  // Update throttle/brake/handbrake
+  myNex.writeNum("main.throttle.val", pc2->m_throttle * 100);
+  myNex.writeNum("main.brake.val", pc2->m_brakes * 100);
+  
+  // Tire data (PC2 has more telemetry)
+  if (currentPage == 1 || currentPage == 6 || currentPage == 7 || currentPage == 12) {
+    myNex.writeStr("temprl.txt", String((uint8_t)pc2->m_tyreTempRearLeft) + "\xB0C");
+    myNex.writeStr("temprr.txt", String((uint8_t)pc2->m_tyreTempRearRight) + "\xB0C");
+    myNex.writeStr("tempfl.txt", String((uint8_t)pc2->m_tyreTempFrontLeft) + "\xB0C");
+    myNex.writeStr("tempfr.txt", String((uint8_t)pc2->m_tyreTempFrontRight) + "\xB0C");
+    
+    // Brake temps (PC2 exclusive)
+    myNex.writeStr("braketemp.txt", String((uint8_t)pc2->m_brakeTemperatureFrontLeft) + "C");
+  }
+  
+  // Lap times
+  if (pc2->m_lastTimeTrialLapTimeMS > 0) {
+    myNex.writeStr("main.llap.txt", GetTimeFromMillis(pc2->m_lastTimeTrialLapTimeMS));
+  }
+  if (pc2->m_fastestLapTimeMS > 0) {
+    myNex.writeStr("main.blap.txt", GetTimeFromMillis(pc2->m_fastestLapTimeMS));
+  }
+  
+  // LED rev counter
+  LedRevCounter(rpm);
+  
+  // Track top speed
+  if (speedKmh > yourTopSpeed) {
+    yourTopSpeed = speedKmh;
+    myNex.writeStr("rv.ts.txt", String(yourTopSpeed));
+  }
 }
 
 #endif

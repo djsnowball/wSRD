@@ -53,6 +53,8 @@ SPIClass *vspi = NULL;
 #include "F1Structs2023.h"
 #include "F1Structs2024.h"
 #include "ACCStructs.h"
+#include "ProjectCarsStructs.h"
+#include "ProjectCars2Structs.h"
 #include "Variables.h"
 #include "UpdateFW.h"
 #include "UpdateNex.h"
