@@ -15,6 +15,17 @@ void ProcessGamePacket(const uint8_t* buffer, uint16_t packetSize) {
     return;
   }
   
+  // Check if game is allowed (respects user selection)
+  if (!IsGameAllowed(detection.gameType)) {
+    if (autoDetectGame == false) {
+      DEBUG_SERIAL.print("Packet from ");
+      DEBUG_SERIAL.print(GetGameName(detection.gameType));
+      DEBUG_SERIAL.print(" rejected - expecting ");
+      DEBUG_SERIAL.println(GetGameName(selectedGame));
+    }
+    return;
+  }
+  
   // Update current game if changed
   if (detection.gameType != currentGameType) {
     currentGameType = detection.gameType;

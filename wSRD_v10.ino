@@ -58,6 +58,7 @@ SPIClass *vspi = NULL;
 #include "Variables.h"
 #include "UpdateFW.h"
 #include "UpdateNex.h"
+#include "GameSelector.h"
 #include "MultiGameHandlers.h"
 #include "Functions.h"
 
@@ -96,6 +97,7 @@ void setup() {
   }
 
   LoadSettings();
+  LoadGameSelection();
 
   WiFi.mode(WIFI_STA);
 
